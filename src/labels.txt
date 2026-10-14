@@ -1,0 +1,207 @@
+# ADDR NAME [SIZE] ; comment      -- names for da65 (make disasm)
+# --- VIC (video interface chip) ---
+9000 VIC_HPOS ; VIC: screen origin X
+9001 VIC_VPOS
+9002 VIC_COLS ; VIC: columns / screen address bit 9
+9003 VIC_ROWS ; VIC: rows / char height
+9004 VIC_RASTER
+9005 VIC_MEMPTR ; VIC: screen + character memory location
+900A VIC_VOICE1
+900B VIC_VOICE2
+900C VIC_VOICE3
+900D VIC_NOISE
+900E VIC_VOLUME ; VIC: volume (low nibble) / aux colour
+900F VIC_COLOR ; VIC: background / border colour
+# --- VIA 1 ($9110) / VIA 2 ($9120) ---
+9111 VIA1_PRA ; joystick up/down/left/fire
+9113 VIA1_DDRA
+9118 VIA1_T2LO
+9119 VIA1_T2HI
+911B VIA1_ACR
+911C VIA1_PCR
+911D VIA1_IFR
+911E VIA1_IER
+9120 VIA2_PRB ; keyboard column / joystick right (bit 7)
+9122 VIA2_DDRB
+9121 VIA2_PRA
+# --- KERNAL / BASIC ROM ---
+E55F KERNAL_CLRSCR ; clear screen
+E518 KERNAL_INITIO
+E742 KERNAL_CHROUT_SCREEN
+EAA1 KERNAL_PUTCHAR
+EAB2 KERNAL_SETCOLOR
+FD8D KERNAL_RAMTAS
+FD52 KERNAL_RESTOR
+FDF9 KERNAL_IOINIT
+FF90 KERNAL_SETMSG
+FFF0 KERNAL_PLOT
+D79E BASIC_GETBYT
+DDCD BASIC_LINPRT ; print 16-bit number A/X
+# --- BASIC header / entry ---
+040F entry ; SYS 1039 lands here
+# --- variables ---
+0412 move_dir ; direction used by next_pos / try_dir (0=up 1=right 2=down 3=left)
+0413 spawn_dx
+0414 spawn_dy
+0415 spawn_dir
+0416 spawn_speed
+0417 spawn_x
+0418 spawn_y
+0419 obj ; offset of the current object record (multiple of 7)
+041A idx_i
+041B idx_j
+041C enemy_last ; offset of the last enemy record
+041D tmp
+041E tmp_dir
+041F next_x ; result of next_pos
+0420 next_y
+0421 shot_x
+0422 shot_y
+0423 lives ; lives of the active pilot
+0424 lives_tab 3 ; lives per pilot (index 1..2)
+0427 turn_a
+0428 turn_b
+0429 straight_count ; enemy: steps until next random decision
+042A pilot ; active pilot 1/2
+042B round
+042C rounds ; rounds per game (5)
+042D pilots ; number of pilots 1/2
+042E unused_042E
+042F fire ; fire button pressed
+0430 joy_raw
+0431 joy_dir ; joystick direction 0..3, 4 = centred
+0432 input_vec 2 ; read_input jumps through this (joystick or demo)
+0434 unused_0434 7
+043B expl_x
+043C expl_y
+043D expl_timer ; explosion sound/graphic countdown
+043E chr_a ; sprite character pair (soft-sprites in charset)
+043F chr_b
+0440 score 4 ; 16-bit score per pilot (pilot>>1<<1 indexed)
+0444 bonus_msg_timer
+0445 player_delay ; player speed: frames per step (2..30)
+0446 stick_action ; 0 = brake/reverse, 1 = accelerate, 2 = turn
+0447 obj_active ; object table, 7 bytes per object: active
+0448 obj_x ; column 0..21
+0449 obj_y ; row 0..21
+044A obj_shift ; pixel offset inside the cell 0..7
+044B obj_dir ; 0=up 1=right 2=down 3=left
+044C obj_speed ; delay reload value
+044D obj_delay ; delay counter
+044E obj_table_rest 70 ; records: enemies 0..$38, player $3F, bullet $46
+0494 hiscore 2
+0496 engine_timer
+0497 expl_volume 57 ; explosion volume envelope (indexed by expl_timer)
+# --- main program ---
+04D0 start
+04DB title
+0503 new_game
+0533 round_loop
+0542 pilot_loop
+0569 game_loop ; one frame: input, enemies, player, bullet, collisions
+05CC game_over
+05F5 txt_game_over 26 ; screen texts: col,row,text,0 ... 0
+060F init_player
+0652 gfx_player 32 ; player plane bitmap, 4 directions x 8 bytes
+0672 show_pilot ; 'ACHTUNG ! PILOT n'
+0684 txt_attention 24
+069C spawn_enemies
+06BF spawn_clear_loop
+06F3 spawn_loop
+0794 spawn_done
+0795 show_scores
+07D2 update_hiscore
+07E5 txt_scores 62
+0823 draw_city ; screen layout: 7x7 blocks of houses
+08CF copy_charset ; ROM chars -> $1800 (custom charset base, $9005=$FE)
+08ED move_enemies
+0936 enemy_step ; move one enemy, maybe turn at random
+0992 move_obj ; dispatch obj_dir via move_tab
+09AF move_tab 8
+09B7 move_up
+09C3 move_right
+09CF move_down
+09DB move_left
+09E7 enemy_turn
+0A27 turn_tab_a 4
+0A2B turn_tab_b 4
+0A2F turn_tab_back 4
+0A33 try_turns
+0A70 try_dir ; C=0: cell in move_dir is free -> obj_dir = move_dir
+0A8C cell_shift_tab 4
+0A90 animate_objects
+0AFB animate_obj ; scroll soft-sprite one pixel
+0B73 next_pos ; obj pos + step(move_dir) -> next_x/next_y
+0B76 next_pos_xy
+0B8E step_dy 4
+0B92 step_dx 4
+0B96 erase_behind
+0BAD back_dx 4
+0BB1 back_dy 4
+0BB5 get_obj_pos ; X=col Y=row of obj
+0BC1 cell_blocked ; C=1 if screen cell is not a space
+0BD0 rnd10 ; tmp = INT(10*RND(1)) via BASIC GETBYT
+0BDF basic_10rnd 8 ; tokenised BASIC '10*RND(1)'
+0BE7 gotoxy ; X=col Y=row
+0BF1 plot_unused
+0BF4 clear_cell
+0BFE check_bounds ; C=1 if next_x/next_y off the 22x22 field
+0C13 draw_block
+0C23 newline
+0C28 pilot_menu ; title screen 'ANZAHL PILOTEN' 1/2
+0C5B pilot_menu_loop
+0CAC txt_menu 78
+0CFA cursor_off
+0D0C print_texts ; X/Y = pointer to text table (col,row,text,0 ... 0)
+0D2F player_control
+0DA8 stick_action_tab 6
+0DAE brake_or_reverse
+0E26 accelerate
+0E3F turn_player
+0E90 use_joystick
+0E9B demo_timer_setup ; unused: NMI timer for an attract mode
+0EBF demo_nmi ; unused
+0EE8 demo_input ; random joystick (unused attract mode)
+0F1A basic_6rnd 7
+0F21 rnd_bonus
+0F36 basic_9rnd 14
+0F44 clear_unused ; unused
+0F66 init_sprite
+0FBE move_player_and_shot
+113D sprite_gfx
+1166 sprite_gfx_tab 30
+1184 sprite_chr_a 3
+1187 sprite_chr_b 3
+118A sprite_color 3
+118D sprite_ptrs ; chr_a/chr_b -> $9E/$A6 pointers into charset $1C00
+11B6 shift_sprite
+11D3 shift_tab 8
+11DB shift_up
+1205 shift_right
+1215 shift_down
+1238 shift_left
+1249 fire_shot
+12F2 gfx_shot 40
+131A check_collisions
+13B3 player_crash
+13BE unused_sec_rts
+13C0 shot_hit_enemy
+147B lose_life
+147E remove_shot
+1485 kill_object
+14B7 start_explosion
+14E0 unused_jsr
+14E3 update_explosion
+150C add_score ; A = points
+1539 delay
+1542 delay_short
+154E bonus_points 5 ; 10, 20, 50, 100, 200
+1553 shot_hit_target ; random bonus
+157C bonus_msg_update
+1595 txt_blank 11
+15A0 read_input ; jmp (input_vec)
+15A3 read_joystick
+1650 free_ram 432
+1A00 gfx_planes 512 ; plane bitmaps, 4 directions x 8 pixel phases
+1800 charset_copy 512 ; ROM characters copied here at runtime
+1C00 sprite_chars 512 ; soft-sprite cells (chars $80..$BF)

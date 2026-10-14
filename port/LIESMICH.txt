@@ -1,0 +1,23 @@
+LUFTKAMPF - Commodore VC20 (1982), native Portierung
+====================================================
+
+Start
+  Linux:   ./luftkampf          (glibc 2.29 oder neuer, X11 oder XWayland)
+  Windows: luftkampf.exe        (Windows 10/11, 64 Bit)
+
+Steuerung
+  Pfeiltasten / WASD / Ziffernblock 8-4-6-2   Joystick
+  Leertaste / Strg / Enter / Ziffernblock 0  Feuer
+  Gamepad: Steuerkreuz oder linker Stick, Taste A/B = Feuer
+  F11 oder Alt+Enter                          Vollbild
+  Esc                                         Beenden
+
+Spiel
+  Titelbild "ANZAHL PILOTEN": links = 1 Pilot, rechts = 2 Piloten,
+  Feuer startet. Die roten Flugzeuge versuchen dich zu rammen.
+  Richtung = schneller, Gegenrichtung = bremsen bzw. wenden,
+  quer = an der Kreuzung abbiegen. Treffer 10 Punkte, alle Gegner
+  abgeschossen 100 Punkte Bonus. 5 Runden, jede Runde endet mit
+  einem Zusammenstoss.
+
+Grafiken, Texte und Spielablauf: (c) Commodore 1982.

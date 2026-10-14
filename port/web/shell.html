@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luftkampf</title>
+<style>
+  :root {
+    --bg: #101418;
+    --panel: #1a2026;
+    --text: #d8dde2;
+    --muted: #8a949e;
+    --accent: #dcd71b;
+    --key-bg: #2a323a;
+    --key-border: #3c4650;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    gap: 14px;
+  }
+  header { text-align: center; }
+  h1 {
+    margin: 0;
+    font: 700 28px/1.2 ui-monospace, "DejaVu Sans Mono", monospace;
+    letter-spacing: 0.25em;
+    color: var(--accent);
+  }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .stage {
+    position: relative;
+    width: min(100%, 896px, calc((100vh - 220px) * 4 / 3));
+    aspect-ratio: 896 / 672;
+    background: #000;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    outline: none;
+  }
+  #start {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 0;
+    background: rgba(16, 20, 24, 0.82);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+  }
+  #start strong { font-size: 22px; color: var(--accent); }
+  #start[hidden] { display: none; }
+  .help {
+    width: min(100%, 896px);
+    background: var(--panel);
+    border-radius: 6px;
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 6px 24px;
+    font-size: 14px;
+  }
+  .help div { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  kbd {
+    background: var(--key-bg);
+    border: 1px solid var(--key-border);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 0 6px;
+    font: 12px/1.6 ui-monospace, monospace;
+  }
+  footer { color: var(--muted); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>LUFTKAMPF</h1>
+  <p>Commodore VC20, 1982 &middot; native Portierung, im Browser</p>
+</header>
+
+<div class="stage">
+  <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+  <button id="start" type="button">
+    <strong>Klicken zum Starten</strong>
+    <span>(der Browser erlaubt Ton erst nach einem Klick)</span>
+  </button>
+</div>
+
+<section class="help" aria-label="Steuerung">
+  <div><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&rarr;</kbd><kbd>&darr;</kbd> / <kbd>WASD</kbd> Joystick</div>
+  <div><kbd>Leertaste</kbd> / <kbd>Strg</kbd> / <kbd>Enter</kbd> Feuer</div>
+  <div>Menü: <kbd>&larr;</kbd> 1 Pilot, <kbd>&rarr;</kbd> 2 Piloten, Feuer startet</div>
+  <div><kbd>F11</kbd> Vollbild &middot; Gamepad geht auch</div>
+  <div>Richtung = schneller, Gegenrichtung = bremsen / wenden</div>
+  <div>Quer = an Kreuzungen abbiegen</div>
+</section>
+
+<footer>Grafiken, Texte und Spielablauf &copy; Commodore 1982</footer>
+
+<script>
+  var canvas = document.getElementById('canvas');
+  var start = document.getElementById('start');
+  // keep arrow keys / space from scrolling the page
+  window.addEventListener('keydown', function (e) {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].indexOf(e.key) >= 0)
+      e.preventDefault();
+  }, { passive: false });
+  var Module = {
+    canvas: canvas,
+    noInitialRun: true,
+    // luftkampf.html?debug -> frame statistics in the browser console
+    preRun: [function () {
+      if (/[?&]debug\b/.test(location.search)) ENV.LK_DEBUG = '1';
+      if (/[?&]trace\b/.test(location.search)) ENV.LK_TRACE = '1';
+    }],
+    // luftkampf.html?autostart -> start without the click (tests; no sound)
+    onRuntimeInitialized: function () {
+      if (/[?&]autostart\b/.test(location.search)) start.click();
+    },
+    print: function (t) { console.log(t); },
+    printErr: function (t) { console.warn(t); }
+  };
+  start.addEventListener('click', function () {
+    start.hidden = true;
+    canvas.focus();
+    Module.callMain([]);
+  });
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>
