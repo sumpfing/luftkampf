@@ -62,6 +62,17 @@ static int blink_count = 20;              /* $CD */
 static long cyc_acc;                      /* cycles not yet turned into a frame */
 static long long cyc_total;               /* all cycles so far (statistics) */
 static long frame_no;
+
+/* Touch-Steuerung (nur im Browser auf Touchgeräten, per JavaScript gesetzt):
+ * analoger Stick, die Auslenkung gibt die gewünschte Geschwindigkeit vor.
+ * touch_target = gewünschte Verzögerung 2 (schnell) … 30 (langsam), -1 = aus. */
+static int touch_target = -1;
+static long touch_step_frame = -1;
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_KEEPALIVE void lk_set_target(int delay) { touch_target = delay; }
+#endif
+/* Spieltempo (1.0 = Original); im Browser per ENV LK_SPEED */
+static double game_speed = 1.0;
 static double jiffy_acc;
 
 /* input state, set from keyboard / gamepad once per frame */
@@ -851,6 +862,19 @@ static void player_control(void)
     stick_action = 2;
     if (tmp_dir == joy_dir) stick_action = 1;
     if (tmp == 2 || tmp == 0xFE) stick_action = 0;
+    if (touch_target >= 0 && stick_action != 2) {
+        /* analog: höchstens eine Geschwindigkeitsstufe pro Bild */
+        if (touch_step_frame == frame_no) return;
+        touch_step_frame = frame_no;
+        if (stick_action == 1) {                /* gleiche Richtung: auf Zielgeschwindigkeit */
+            int d = player_delay, t = touch_target;
+            if (d > t) SPEED(obj) = (u8)(d - 1 < 2 ? 2 : d - 1);
+            else if (d < t) SPEED(obj) = (u8)(d + 1 > 0x1E ? 0x1E : d + 1);
+            return;
+        }
+        /* Gegenrichtung: einzeln abbremsen, bei Mindestgeschwindigkeit wenden */
+        if (player_delay < 0x1E) { SPEED(obj) = (u8)(player_delay + 1); return; }
+    }
     switch (stick_action) {
     case 0: brake_or_reverse(); break;
     case 1: accelerate(); break;
@@ -1331,7 +1355,7 @@ static void frame(void)
     static double t_start = -1, t_shown;
     double now = GetTime(), due;
     if (t_start < 0) t_start = t_shown = now;
-    due = t_start + (double)frame_no / FPS;
+    due = t_start + (double)frame_no / (FPS * game_speed);
     late_sum += now - due;
     if (headless || now < due + 1.0 / FPS || now - t_shown > 0.25) {
         render();
@@ -1410,7 +1434,11 @@ int main(void)
     InitWindow(IMG_W * SCALE_X, IMG_H * SCALE_Y, "Luftkampf");
     SetWindowMinSize(IMG_W * 2, IMG_H * 2);
 #ifndef __EMSCRIPTEN__
-    if (!getenv("LK_NOFPS")) SetTargetFPS(FPS);
+    if (getenv("LK_SPEED")) {
+        game_speed = atof(getenv("LK_SPEED"));
+        if (game_speed < 0.3 || game_speed > 2) game_speed = 1.0;
+    }
+    if (!getenv("LK_NOFPS")) SetTargetFPS((int)(FPS * game_speed + 0.5));
 #endif
     SetExitKey(KEY_ESCAPE);
     Image img = GenImageColor(IMG_W, IMG_H, BLACK);
