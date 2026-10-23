@@ -42,7 +42,7 @@ build/web/luftkampf.html: $(SRC) src/gamedata.h web/shell.html
 	EM_CONFIG=$(CURDIR)/$(EMSDK)/.emscripten $(EMSDK)/upstream/emscripten/emcc -std=c99 -O2 -Wall -DPLATFORM_WEB \
 	    -I$(RAYLIB_WEB)/include -o $@ $(SRC) $(RAYLIB_WEB)/lib/libraylib.a \
 	    -sUSE_GLFW=3 -sASYNCIFY -sASYNCIFY_STACK_SIZE=65536 -sALLOW_MEMORY_GROWTH=1 \
-	    -sSINGLE_FILE=1 -sEXPORTED_RUNTIME_METHODS=callMain,HEAPF32,HEAP16,HEAPU8,ENV --shell-file web/shell.html
+	    -sEXPORTED_RUNTIME_METHODS=callMain,HEAPF32,HEAP16,HEAPU8,ENV --shell-file web/shell.html
 
 dist: build/linux-compat/luftkampf build/windows/luftkampf.exe build/web/luftkampf.html
 	rm -rf dist && mkdir -p dist/luftkampf-linux-x86_64 dist/luftkampf-windows-x64
